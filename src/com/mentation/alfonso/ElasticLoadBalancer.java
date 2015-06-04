@@ -1,14 +1,27 @@
+/*
+Copyright 2015 Lewis Foti
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+ */
+
 package com.mentation.alfonso;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
-import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerResult;
@@ -32,7 +45,8 @@ public class ElasticLoadBalancer {
 		_name = name;
 		
 		_elbClient = new AmazonElasticLoadBalancingClient();
-		_elbClient.setRegion(Region.getRegion(Regions.US_WEST_2));
+		// TODO Should read this from properties file
+		_elbClient.setRegion(Region.getRegion(Regions.US_WEST_2));  
 	}
 	
 	
@@ -106,5 +120,15 @@ public class ElasticLoadBalancer {
 		}
 		
 		return false;
+	}
+	
+	public String getName() {
+		return _name;
+	}
+
+
+	public int countInstances() {
+		// TODO Auto-generated method stub
+		return 0;
 	}
 }
