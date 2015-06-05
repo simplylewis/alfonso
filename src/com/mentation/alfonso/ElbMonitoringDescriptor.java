@@ -7,17 +7,17 @@ import com.mentation.fsm.message.IMessage;
 public class ElbMonitoringDescriptor {
 	ElasticLoadBalancer _loadBalancer;
 	int _pollingInterval;
-	IMessage _passMessage = null;
-	IMessage _failMessage = null;
+	IMessage _passMessage;
+	IMessage _failMessage;
 	
-	Set<String> _validInstances = null;
+	Set<String> _validInstances;
 
 	public ElasticLoadBalancer getLoadBalancer() {
 		return _loadBalancer;
 	}
 
 	public void setLoadBalancer(ElasticLoadBalancer loadBalancer) {
-		this._loadBalancer = loadBalancer;
+		_loadBalancer = loadBalancer;
 	}
 
 	public int getPollingInterval() {
@@ -25,7 +25,7 @@ public class ElbMonitoringDescriptor {
 	}
 
 	public void setPollingInterval(int pollingInterval) {
-		this._pollingInterval = pollingInterval;
+		_pollingInterval = pollingInterval;
 	}
 
 	public IMessage getPassMessage() {
@@ -41,7 +41,7 @@ public class ElbMonitoringDescriptor {
 	}
 
 	public void setFailMessage(IMessage failMessage) {
-		this._failMessage = failMessage;
+		_failMessage = failMessage;
 	}
 
 	public Set<String> getValidInstances() {
@@ -49,7 +49,7 @@ public class ElbMonitoringDescriptor {
 	}
 
 	public void setValidInstances(Set<String> validInstances) {
-		this._validInstances = validInstances;
+		_validInstances = validInstances;
 	}
 	
 }

@@ -21,10 +21,17 @@ import com.mentation.fsm.state.FiniteState;
 import com.mentation.fsm.state.FiniteStateMachine;
 
 public class Alfonso {
-	FiniteStateMachine _alfonsoStateMachine;
-	ElbMonitor _blueElbMonitor;
-	ElbMonitor _greenElbMonitor;
-	ElbMonitor _liveElbMonitor;
+	protected FiniteStateMachine _alfonsoStateMachine;
+	protected ElbMonitor _blueElbMonitor;
+	protected ElbMonitor _greenElbMonitor;
+	protected ElbMonitor _liveElbMonitor;
+	
+	protected ElasticLoadBalancer _greenElb;
+	protected ElasticLoadBalancer _blueElb;
+	protected ElasticLoadBalancer _liveElb;
+	
+	protected String _blueId;
+	protected String _greenId;
 	
 	class BlueIsHealthy implements IMessage {};
 	class BlueIsUnhealthy implements IMessage {};
@@ -33,6 +40,13 @@ public class Alfonso {
 	class LiveHasNone implements IMessage {};
 	class LiveHasOne implements IMessage {};
 	
+	protected final BlueIsHealthy _blueIsHealthy = new BlueIsHealthy();
+	protected final BlueIsUnhealthy _blueIsUnhealthy = new BlueIsUnhealthy();
+	protected final GreenIsHealthy _greenIsHealthy = new GreenIsHealthy();
+	protected final GreenIsUnhealthy _greenIsUnhealthy = new GreenIsUnhealthy();
+	protected final LiveHasNone _liveHasNone = new LiveHasNone();
+	protected final LiveHasOne _liveHasOne = new LiveHasOne();
+	
 	public static void main(String[] args) {		
 		Alfonso alfonso = new Alfonso();
 		
@@ -40,76 +54,76 @@ public class Alfonso {
 	}
 	
 	public Alfonso() {
-		_alfonsoStateMachine = new FiniteStateMachine("Alfonso", configureFsm(null, null, null, null, null));
+		// TODO need to get the correct values for the parameters
 	}
 
-	private ElbMonitor configureElbMonitor(ElasticLoadBalancer elb, IMessage passMessgage, IMessage failMessage, IStateAnalyser stateAnalyser) {
+	private ElbMonitor configureElbMonitor(ElasticLoadBalancer elb, IMessage passMessage, IMessage failMessage, IStateAnalyser stateAnalyser) {
 		ElbMonitoringDescriptor descriptor = new ElbMonitoringDescriptor();
 		
 		descriptor.setLoadBalancer(elb);
 		descriptor.setPollingInterval(10000);
+		descriptor.setPassMessage(passMessage);
+		descriptor.setFailMessage(failMessage);
 		
 		return new ElbMonitor(_alfonsoStateMachine, descriptor, stateAnalyser);
-		
 	}
 
-	private FiniteState configureFsm(ElasticLoadBalancer blueElb, String blueId, ElasticLoadBalancer greenElb, String greenId, ElasticLoadBalancer liveElb) {		
+	protected FiniteState configureFsm(ElasticLoadBalancer blueElb, String blueId, ElasticLoadBalancer greenElb, String greenId, ElasticLoadBalancer liveElb) {		
 		
 		FiniteState waitForBlueHealthy = new FiniteState(new AddInstanceToElb(blueElb, blueId), "Wait For BlueHealthy");
 		FiniteState waitForGreenHealthy = new FiniteState(new AddInstanceToElb(greenElb, greenId), "Wait For GreenHealthy");
-		FiniteState addBlueToLive = new FiniteState(new AddInstanceToElb(liveElb, blueId), "Add Blue to Live");
+		FiniteState addBlueToLive = new FiniteState(new AddInstanceToElb(liveElb, blueId), "Add Blue To Live");
 		FiniteState addGreenToLive = new FiniteState(new AddInstanceToElb(liveElb, greenId), "Add Green To Live");
 		FiniteState blueLive = new FiniteState(null, "Blue Live");
 		FiniteState greenLive = new FiniteState(null, "Green Live");
 		FiniteState blueFailed = new FiniteState(new RemoveInstanceFromElb(blueElb), "Blue Failed");
 		FiniteState greenFailed = new FiniteState(null, "Green Failed");
-		FiniteState returnBlueToLive = new FiniteState(new RemoveInstanceFromElb(liveElb), "Return Blue To Live");
+		FiniteState returnBlueToLive = new FiniteState(new RemoveInstanceFromElb(liveElb), "Remove Green From Live");
 		FiniteState recovery = new FiniteState(new RemoveInstanceFromElb(liveElb), "Recovery");
 		
-		BlueIsHealthy blueIsHealthy = new BlueIsHealthy();
-		BlueIsUnhealthy blueIsUnhealthy = new BlueIsUnhealthy();
-		GreenIsHealthy greenIsHealthy = new GreenIsHealthy();
-		GreenIsUnhealthy greenIsUnhealthy = new GreenIsUnhealthy();
-		LiveHasNone liveHasNone = new LiveHasNone();
-		LiveHasOne liveHasOne = new LiveHasOne();
+		waitForBlueHealthy.addTransition(_blueIsHealthy, waitForGreenHealthy);
 		
-		waitForBlueHealthy.addTransition(blueIsHealthy, waitForGreenHealthy);
+		waitForGreenHealthy.addTransition(_greenIsHealthy, addBlueToLive);
 		
-		waitForGreenHealthy.addTransition(greenIsHealthy, addBlueToLive);
+		addBlueToLive.addTransition(_liveHasOne, blueLive);
+		addBlueToLive.addTransition(_blueIsUnhealthy, blueFailed);
 		
-		addBlueToLive.addTransition(liveHasOne, blueLive);
-		addBlueToLive.addTransition(blueIsUnhealthy, blueFailed);
+		blueLive.addTransition(_blueIsUnhealthy, blueFailed);
+		blueLive.addTransition(_greenIsUnhealthy, greenFailed);
 		
-		blueLive.addTransition(blueIsUnhealthy, blueFailed);
-		blueLive.addTransition(greenIsUnhealthy, greenFailed);
+		blueFailed.addTransition(_liveHasNone, addGreenToLive);
 		
-		blueFailed.addTransition(liveHasNone, addGreenToLive);
+		greenFailed.addTransition(_greenIsHealthy, blueLive);
+		greenFailed.addTransition(_blueIsUnhealthy, recovery);
 		
-		greenFailed.addTransition(greenIsHealthy, blueLive);
-		greenFailed.addTransition(blueIsUnhealthy, recovery);
+		addGreenToLive.addTransition(_liveHasOne, greenLive);
+		addGreenToLive.addTransition(_greenIsUnhealthy, recovery);
 		
-		addGreenToLive.addTransition(liveHasOne, greenLive);
-		addGreenToLive.addTransition(greenIsUnhealthy, recovery);
+		greenLive.addTransition(_blueIsHealthy, returnBlueToLive);
+		greenLive.addTransition(_greenIsUnhealthy, recovery);
 		
-		greenLive.addTransition(blueIsUnhealthy, returnBlueToLive);
-		greenLive.addTransition(greenIsUnhealthy, recovery);
+		returnBlueToLive.addTransition(_liveHasNone, addBlueToLive);
 		
-		returnBlueToLive.addTransition(liveHasNone, addBlueToLive);
-		
-		recovery.addTransition(blueIsHealthy, addBlueToLive);
-		recovery.addTransition(greenIsHealthy, addGreenToLive);
+		recovery.addTransition(_blueIsHealthy, addBlueToLive);
+		recovery.addTransition(_greenIsHealthy, addGreenToLive);
 
-		_blueElbMonitor = configureElbMonitor(blueElb, blueIsHealthy, blueIsUnhealthy, new InstanceStateAnalyser());
-		_greenElbMonitor = configureElbMonitor(blueElb, greenIsHealthy, greenIsUnhealthy, new InstanceStateAnalyser());
-		_liveElbMonitor = configureElbMonitor(liveElb, liveHasOne, liveHasNone, new LiveStateAnalyser());
 		
 		return waitForBlueHealthy;
 	}
 	
-	public void runStateMachine() {
+	protected FiniteStateMachine runStateMachine() {
+		_alfonsoStateMachine = new FiniteStateMachine("Alfonso", configureFsm(_blueElb, _blueId, _greenElb, _greenId, _liveElb));
+
 		_alfonsoStateMachine.start();
+		
+		_blueElbMonitor = configureElbMonitor(_blueElb, _blueIsHealthy, _blueIsUnhealthy, new InstanceStateAnalyser());
+		_greenElbMonitor = configureElbMonitor(_greenElb, _greenIsHealthy, _greenIsUnhealthy, new InstanceStateAnalyser());
+		_liveElbMonitor = configureElbMonitor(_liveElb, _liveHasOne, _liveHasNone, new LiveStateAnalyser());
+		
 		_blueElbMonitor.start();
 		_greenElbMonitor.start();
 		_liveElbMonitor.start();
+		
+		return _alfonsoStateMachine;
 	}
 }

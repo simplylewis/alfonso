@@ -16,6 +16,9 @@ limitations under the License.
 
 package com.mentation.alfonso;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteStateMachine;
 
@@ -23,6 +26,7 @@ public class ElbMonitor extends Thread {
 	private FiniteStateMachine _fsm;
 	private ElbMonitoringDescriptor _descriptor;
 	private IStateAnalyser _stateAnalyser;
+	private Logger _logger = Logger.getLogger("FiniteStateMachine");
 	
 	public ElbMonitor(FiniteStateMachine fsm, ElbMonitoringDescriptor descriptor, IStateAnalyser stateAnalyser) {
 		_fsm = fsm;
@@ -57,6 +61,10 @@ public class ElbMonitor extends Thread {
 	}
 	
 	protected IMessage monitor() {
-		return _stateAnalyser.map(_descriptor);
+		IMessage msg = _stateAnalyser.map(_descriptor);
+		
+		_logger.log(Level.FINE, new StringBuffer("Monitor returning ").append(msg).append(" from ").append(_descriptor.getLoadBalancer().getName()).toString());
+		
+		return msg;
 	}
 }
