@@ -106,14 +106,23 @@ public class AlfonsoTest {
 		}
 		
 		Alfonso alfonso = new Alfonso();
+		
 		alfonso._blueElb = blueElb;
 		alfonso._greenElb = greenElb;
 		alfonso._liveElb = liveElb;
-
-		alfonso._blueId = "blueId";
-		alfonso._greenId = "greenId";
 		
-		FiniteStateMachine fsm = alfonso.runStateMachine();
+		Arguments arguments = new Arguments();
+		
+		String[] args = {"blueElbId=blue", "greenElbId=green", "liveElbId=live", "blueInstanceId=isBlue", "greenInstanceId=isGreen"};
+		
+		arguments.parseArgs(args);
+
+		Assert.assertTrue(arguments.isValid());
+		
+		alfonso.configureStateMachine(arguments);
+		alfonso.configureMonitors(alfonso._alfonsoStateMachine);
+				
+		alfonso.runStateMachine();
 		
 		try {
 			Thread.sleep(40000);
@@ -122,7 +131,7 @@ public class AlfonsoTest {
 			e.printStackTrace();
 		}
 		
-		Assert.assertEquals(fsm.getState().getName(),"Blue Live");
+		Assert.assertEquals(alfonso._alfonsoStateMachine.getState().getName(),"Blue Live");
 	}
 	
 }

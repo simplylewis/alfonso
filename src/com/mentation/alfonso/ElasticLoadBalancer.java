@@ -18,7 +18,6 @@ package com.mentation.alfonso;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;

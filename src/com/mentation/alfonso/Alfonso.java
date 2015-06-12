@@ -30,9 +30,6 @@ public class Alfonso {
 	protected ElasticLoadBalancer _blueElb;
 	protected ElasticLoadBalancer _liveElb;
 	
-	protected String _blueId;
-	protected String _greenId;
-	
 	class BlueIsHealthy implements IMessage {};
 	class BlueIsUnhealthy implements IMessage {};
 	class GreenIsHealthy implements IMessage {};
@@ -47,17 +44,39 @@ public class Alfonso {
 	protected final LiveHasNone _liveHasNone = new LiveHasNone();
 	protected final LiveHasOne _liveHasOne = new LiveHasOne();
 	
-	public static void main(String[] args) {		
+	public static void main(String[] args) {
+		Arguments arguments = new Arguments();
+		
+		arguments.parseArgs(args);
+		
+		if (!arguments.isValid()) {
+			System.err.println("Arguments are incorrect and/or incomplete, exiting...");
+			
+			System.exit(1);
+		}
+		
 		Alfonso alfonso = new Alfonso();
+		
+		alfonso.configureLoadBalancers(arguments);
+		alfonso.configureStateMachine(arguments);
+		alfonso.configureMonitors(alfonso._alfonsoStateMachine);
 		
 		alfonso.runStateMachine();
 	}
-	
-	public Alfonso() {
-		// TODO need to get the correct values for the parameters
+
+	protected void configureMonitors(FiniteStateMachine fsm) {
+		_blueElbMonitor = configureElbMonitor(fsm, _blueElb, _blueIsHealthy, _blueIsUnhealthy, new InstanceStateAnalyser());
+		_greenElbMonitor = configureElbMonitor(fsm, _greenElb, _greenIsHealthy, _greenIsUnhealthy, new InstanceStateAnalyser());
+		_liveElbMonitor = configureElbMonitor(fsm, _liveElb, _liveHasOne, _liveHasNone, new LiveStateAnalyser());
 	}
 
-	private ElbMonitor configureElbMonitor(ElasticLoadBalancer elb, IMessage passMessage, IMessage failMessage, IStateAnalyser stateAnalyser) {
+	private void configureLoadBalancers(Arguments arguments) {
+		_blueElb = new ElasticLoadBalancer(arguments.getBlueElbId());
+		_greenElb = new ElasticLoadBalancer(arguments.getGreenElbId());
+		_liveElb = new ElasticLoadBalancer(arguments.getLiveElbId());
+	}
+
+	private ElbMonitor configureElbMonitor(FiniteStateMachine fsm, ElasticLoadBalancer elb, IMessage passMessage, IMessage failMessage, IStateAnalyser stateAnalyser) {
 		ElbMonitoringDescriptor descriptor = new ElbMonitoringDescriptor();
 		
 		descriptor.setLoadBalancer(elb);
@@ -65,7 +84,7 @@ public class Alfonso {
 		descriptor.setPassMessage(passMessage);
 		descriptor.setFailMessage(failMessage);
 		
-		return new ElbMonitor(_alfonsoStateMachine, descriptor, stateAnalyser);
+		return new ElbMonitor(fsm, descriptor, stateAnalyser);
 	}
 
 	protected FiniteState configureFsm(ElasticLoadBalancer blueElb, String blueId, ElasticLoadBalancer greenElb, String greenId, ElasticLoadBalancer liveElb) {		
@@ -111,19 +130,15 @@ public class Alfonso {
 		return waitForBlueHealthy;
 	}
 	
-	protected FiniteStateMachine runStateMachine() {
-		_alfonsoStateMachine = new FiniteStateMachine("Alfonso", configureFsm(_blueElb, _blueId, _greenElb, _greenId, _liveElb));
-
+	protected void configureStateMachine(Arguments arguments) {			
+		_alfonsoStateMachine = new FiniteStateMachine("Alfonso", configureFsm(_blueElb, arguments.getBlueInstanceId(), _greenElb, arguments.getGreenInstanceId(), _liveElb));
+	}
+	
+	protected void runStateMachine() {		
 		_alfonsoStateMachine.start();
-		
-		_blueElbMonitor = configureElbMonitor(_blueElb, _blueIsHealthy, _blueIsUnhealthy, new InstanceStateAnalyser());
-		_greenElbMonitor = configureElbMonitor(_greenElb, _greenIsHealthy, _greenIsUnhealthy, new InstanceStateAnalyser());
-		_liveElbMonitor = configureElbMonitor(_liveElb, _liveHasOne, _liveHasNone, new LiveStateAnalyser());
 		
 		_blueElbMonitor.start();
 		_greenElbMonitor.start();
 		_liveElbMonitor.start();
-		
-		return _alfonsoStateMachine;
 	}
 }
