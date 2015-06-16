@@ -2,6 +2,7 @@ package com.mentation.alfonso;
 
 import java.util.Set;
 
+import com.mentation.alfonso.aws.ElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 
 public class ElbMonitoringDescriptor {

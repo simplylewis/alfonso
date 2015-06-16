@@ -102,20 +102,27 @@ public class AwsInstance {
 	}
 	
 	public boolean terminate(String instanceId) {
-		AmazonEC2Client ec2Client = getClient();
-		
 		List<String> instanceIds = new ArrayList<>();
 		instanceIds.add(instanceId);
+
+		return terminate(instanceIds);
+	}
+	
+	public boolean terminate(List<String> instanceIds) {
+		AmazonEC2Client ec2Client = getClient();
 		
 		TerminateInstancesRequest terminateInstancesRequest = new TerminateInstancesRequest(instanceIds);
 		
 		TerminateInstancesResult result = ec2Client.terminateInstances(terminateInstancesRequest);
 		
+		int count = instanceIds.size();
+		
 		for (InstanceStateChange isc : result.getTerminatingInstances()) {
-			if (isc.getInstanceId().equals(instanceId)) return true;
+			if (instanceIds.contains(isc.getInstanceId())) count--;
 		}
 		
-		return false;
+		return (count == 0);
+
 	}
 
 }

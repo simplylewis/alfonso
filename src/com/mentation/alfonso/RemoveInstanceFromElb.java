@@ -16,6 +16,7 @@ limitations under the License.
 
 package com.mentation.alfonso;
 
+import com.mentation.alfonso.aws.ElasticLoadBalancer;
 import com.mentation.fsm.action.IStateEntryAction;
 
 public class RemoveInstanceFromElb implements IStateEntryAction {

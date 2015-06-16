@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
  */
 
-package com.mentation.alfonso;
+package com.mentation.alfonso.aws;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,7 +67,7 @@ public class ElasticLoadBalancer {
 		List<Instance> instances = new ArrayList<>();
 		instances.add(instance);
 		
-		RegisterInstancesWithLoadBalancerRequest registerInstancesWithLoadBalancerRequest = new RegisterInstancesWithLoadBalancerRequest("TestElb", instances);
+		RegisterInstancesWithLoadBalancerRequest registerInstancesWithLoadBalancerRequest = new RegisterInstancesWithLoadBalancerRequest(_name, instances);
 		
 		RegisterInstancesWithLoadBalancerResult result = _elbClient.registerInstancesWithLoadBalancer(registerInstancesWithLoadBalancerRequest);
 		

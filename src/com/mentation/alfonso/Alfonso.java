@@ -16,6 +16,7 @@ limitations under the License.
 
 package com.mentation.alfonso;
 
+import com.mentation.alfonso.aws.ElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteState;
 import com.mentation.fsm.state.FiniteStateMachine;
@@ -30,12 +31,12 @@ public class Alfonso {
 	protected ElasticLoadBalancer _blueElb;
 	protected ElasticLoadBalancer _liveElb;
 	
-	class BlueIsHealthy implements IMessage {};
-	class BlueIsUnhealthy implements IMessage {};
-	class GreenIsHealthy implements IMessage {};
-	class GreenIsUnhealthy implements IMessage {};
-	class LiveHasNone implements IMessage {};
-	class LiveHasOne implements IMessage {};
+	static class BlueIsHealthy implements IMessage {};
+	static class BlueIsUnhealthy implements IMessage {};
+	static class GreenIsHealthy implements IMessage {};
+	static class GreenIsUnhealthy implements IMessage {};
+	static class LiveHasNone implements IMessage {};
+	static class LiveHasOne implements IMessage {};
 	
 	protected final BlueIsHealthy _blueIsHealthy = new BlueIsHealthy();
 	protected final BlueIsUnhealthy _blueIsUnhealthy = new BlueIsUnhealthy();

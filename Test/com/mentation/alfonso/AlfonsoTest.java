@@ -27,6 +27,7 @@ import mockit.Mocked;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import com.mentation.alfonso.aws.ElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteState;
 import com.mentation.fsm.state.FiniteStateMachine;

@@ -19,6 +19,7 @@ package com.mentation.alfonso;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.mentation.alfonso.aws.ElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteStateMachine;
 
