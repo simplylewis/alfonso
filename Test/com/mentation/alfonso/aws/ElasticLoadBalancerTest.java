@@ -28,14 +28,13 @@ import org.testng.annotations.Test;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancing.model.DeleteLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.Listener;
-import com.mentation.alfonso.aws.AwsInstance;
-import com.mentation.alfonso.aws.ElasticLoadBalancer;
 
 public class ElasticLoadBalancerTest {
 	
@@ -54,6 +53,23 @@ public class ElasticLoadBalancerTest {
 		_elb = new ElasticLoadBalancer(_elbName);	
 		
 		_instances.addAll(createEc2Instance());
+		
+		AwsInstance awsInstance = new AwsInstance();
+		InstanceState current;
+		
+		do {
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			current = awsInstance.getState(_instances).get(_instances.get(0));
+			
+			System.out.println(current);
+		} while (!current.getName().toLowerCase().startsWith("run"));
+		
+
 	}
 
 	@AfterSuite
@@ -64,13 +80,15 @@ public class ElasticLoadBalancerTest {
 	
 	@Test
 	public void attachInstanceTest() {
+		System.out.println("Attaching " + _instances.get(0) + " to ELB");
 		Assert.assertTrue(_elb.attachInstance(_instances.get(0)));
 	}
 	
 	@Test(dependsOnMethods = { "attachInstanceTest" })
 	public void checkHealthyTest() {
+		System.out.println("Waiting for instance to be healthy");
 		try {
-			Thread.sleep(20000);
+			Thread.sleep(90000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -116,8 +134,8 @@ public class ElasticLoadBalancerTest {
 		tags.add(role);
 
 		
-		Collection<String> instances = awsInstance.launch("ami-e7527ed7", "t2.micro", AwsInstance.getAvailabilityZones().get(0),
-				"aws-general", securityGroupIds, tags);
+		List<String> instances = new ArrayList<String>(awsInstance.launch("ami-effac0df", "t2.micro", AwsInstance.getAvailabilityZones().get(0),
+				"aws-general", securityGroupIds, tags));
 		
 		if (instances.isEmpty()) {
 			throw new RuntimeException("Could not create AWS Instance");

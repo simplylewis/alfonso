@@ -3,6 +3,8 @@ package com.mentation.alfonso.aws;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import com.amazonaws.regions.Region;
@@ -15,6 +17,7 @@ import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
 import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.InstanceStateChange;
 import com.amazonaws.services.ec2.model.Placement;
 import com.amazonaws.services.ec2.model.Reservation;
@@ -123,6 +126,22 @@ public class AwsInstance {
 		
 		return (count == 0);
 
+	}
+
+	public Map<String, InstanceState> getState(List<String> instances) {
+		AmazonEC2Client ec2Client = getClient();
+		Map<String, InstanceState> results = new TreeMap<String, InstanceState>();
+		DescribeInstancesResult dir = ec2Client.describeInstances();
+		
+		for (Reservation res : dir.getReservations()) {
+			for (Instance inst : res.getInstances()) {
+				if (instances.contains(inst.getInstanceId())) {
+					results.put(inst.getInstanceId(), inst.getState());
+				}
+			}
+		}
+		
+		return results;
 	}
 
 }

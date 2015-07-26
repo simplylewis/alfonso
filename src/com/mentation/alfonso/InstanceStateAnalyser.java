@@ -15,7 +15,7 @@ public class InstanceStateAnalyser implements IStateAnalyser {
 		_logger.log(Level.FINE, 
 				new StringBuffer("Monitoring ").append(descriptor.getLoadBalancer().getName()).append(".IsInstanceHealthy returned ").append(b).toString());
 		
-		return b ? descriptor.getPassMessage() : descriptor.getFaileMessage();
+		return b ? descriptor.getPassMessage() : descriptor.getFailMessage();
 	}
 
 }

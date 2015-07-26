@@ -90,17 +90,19 @@ public class Alfonso {
 
 	protected FiniteState configureFsm(ElasticLoadBalancer blueElb, String blueId, ElasticLoadBalancer greenElb, String greenId, ElasticLoadBalancer liveElb) {		
 		
+		FiniteState start = new FiniteState(null, "Start");
 		FiniteState waitForBlueHealthy = new FiniteState(new AddInstanceToElb(blueElb, blueId), "Wait For BlueHealthy");
 		FiniteState waitForGreenHealthy = new FiniteState(new AddInstanceToElb(greenElb, greenId), "Wait For GreenHealthy");
 		FiniteState addBlueToLive = new FiniteState(new AddInstanceToElb(liveElb, blueId), "Add Blue To Live");
 		FiniteState addGreenToLive = new FiniteState(new AddInstanceToElb(liveElb, greenId), "Add Green To Live");
 		FiniteState blueLive = new FiniteState(null, "Blue Live");
 		FiniteState greenLive = new FiniteState(null, "Green Live");
-		FiniteState blueFailed = new FiniteState(new RemoveInstanceFromElb(blueElb), "Blue Failed");
+		FiniteState blueFailed = new FiniteState(new RemoveInstanceFromElb(liveElb), "Blue Failed");
 		FiniteState greenFailed = new FiniteState(null, "Green Failed");
 		FiniteState returnBlueToLive = new FiniteState(new RemoveInstanceFromElb(liveElb), "Remove Green From Live");
 		FiniteState recovery = new FiniteState(new RemoveInstanceFromElb(liveElb), "Recovery");
 		
+		start.addTransition(_blueIsUnhealthy, waitForBlueHealthy);
 		waitForBlueHealthy.addTransition(_blueIsHealthy, waitForGreenHealthy);
 		
 		waitForGreenHealthy.addTransition(_greenIsHealthy, addBlueToLive);
@@ -128,7 +130,7 @@ public class Alfonso {
 		recovery.addTransition(_greenIsHealthy, addGreenToLive);
 
 		
-		return waitForBlueHealthy;
+		return start;
 	}
 	
 	protected void configureStateMachine(Arguments arguments) {			

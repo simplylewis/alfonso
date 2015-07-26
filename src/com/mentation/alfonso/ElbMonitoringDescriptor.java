@@ -37,7 +37,7 @@ public class ElbMonitoringDescriptor {
 		_passMessage = passMessage;
 	}
 	
-	public IMessage getFaileMessage() {
+	public IMessage getFailMessage() {
 		return _failMessage;
 	}
 

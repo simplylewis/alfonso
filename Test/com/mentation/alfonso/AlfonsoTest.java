@@ -46,12 +46,13 @@ public class AlfonsoTest {
 		FiniteState initialState =
 				alfonso.configureFsm(blueElb, "blueId", greenElb, "greenId", liveElb);
 
-		Assert.assertEquals(initialState.getName(), "Wait For BlueHealthy");
+		Assert.assertEquals(initialState.getName(), "Start");
 
 		FiniteStateMachine fsm = new FiniteStateMachine("Alfonso Test", initialState);
 
 		fsm.start();
 
+		postMessage(fsm, alfonso._blueIsUnhealthy, "Wait For BlueHealthy");
 		postMessage(fsm, alfonso._blueIsHealthy, "Wait For GreenHealthy");	  
 		postMessage(fsm, alfonso._greenIsHealthy, "Add Blue To Live");	  
 		postMessage(fsm, alfonso._liveHasOne, "Blue Live");	  
@@ -93,7 +94,6 @@ public class AlfonsoTest {
 		new Expectations() {{ 
 			blueElb.isInstanceHealthy(); result = true;		
 			greenElb.isInstanceHealthy(); result = true;	
-			liveElb.countInstances(); result = 1;
 			blueElb.getName(); result = "BlueElb";	
 			greenElb.getName(); result = "GreenElb";	
 			liveElb.getName(); result = "LiveElb";

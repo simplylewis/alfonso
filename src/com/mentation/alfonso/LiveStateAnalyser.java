@@ -6,7 +6,7 @@ public class LiveStateAnalyser implements IStateAnalyser {
 
 	@Override
 	public IMessage map(ElbMonitoringDescriptor descriptor) {
-		return descriptor.getLoadBalancer().countInstances() == 1 ? descriptor.getPassMessage() : descriptor.getFaileMessage();
+		return descriptor.getLoadBalancer().isInstanceHealthy() ? descriptor.getPassMessage() : descriptor.getFailMessage();
 	}
 
 }

@@ -37,7 +37,7 @@ import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLo
 public class ElasticLoadBalancer {
 
 	private String _name;
-	private Instance _instance;
+	private Instance _instance = null;
 	private AmazonElasticLoadBalancingClient _elbClient;
 	
 	public ElasticLoadBalancer(String name) {
@@ -66,6 +66,8 @@ public class ElasticLoadBalancer {
 		
 		List<Instance> instances = new ArrayList<>();
 		instances.add(instance);
+		
+		System.out.println("Attempting to attach instance " + instance.getInstanceId() + " to " + getName() + " ELB");
 		
 		RegisterInstancesWithLoadBalancerRequest registerInstancesWithLoadBalancerRequest = new RegisterInstancesWithLoadBalancerRequest(_name, instances);
 		
@@ -103,7 +105,13 @@ public class ElasticLoadBalancer {
 		return true;
 	}
 	
-	public boolean isInstanceHealthy() {
+	public String getInstanceId() {
+		Instance inst = _instance;
+		
+		return inst == null ? "" : inst.getInstanceId();
+	}
+	
+	public boolean isInstanceHealthy() {		
 		List<Instance> instances = new ArrayList<>();
 		instances.add(_instance);
 		
@@ -113,7 +121,11 @@ public class ElasticLoadBalancer {
 		DescribeInstanceHealthResult describeInstanceHealthResult = _elbClient.describeInstanceHealth(describeInstanceHealthRequest);
 		
 		for (InstanceState state : describeInstanceHealthResult.getInstanceStates())  {
-			if (state.getState().equals("InService") && state.getInstanceId().equals(_instance.getInstanceId())) {
+			System.out.println(state);
+			
+			if (!state.getState().equals("InService")) continue;
+				
+			if (state.getInstanceId().equals(getInstanceId())) {
 				return true;
 			}
 		}
@@ -125,9 +137,4 @@ public class ElasticLoadBalancer {
 		return _name;
 	}
 
-
-	public int countInstances() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 }
