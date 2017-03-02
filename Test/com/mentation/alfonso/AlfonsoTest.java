@@ -21,22 +21,70 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import mockit.Delegate;
 import mockit.Expectations;
 import mockit.Mocked;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import com.mentation.alfonso.aws.ElasticLoadBalancer;
+import com.mentation.alfonso.aws.IElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteState;
 import com.mentation.fsm.state.FiniteStateMachine;
 
 public class AlfonsoTest {
 
-	@Mocked ElasticLoadBalancer blueElb;
-	@Mocked ElasticLoadBalancer greenElb;
-	@Mocked ElasticLoadBalancer liveElb;
+	IElasticLoadBalancer blueElb;
+	IElasticLoadBalancer greenElb;
+	IElasticLoadBalancer liveElb;
+	
+	class DummyLoadBalancer implements IElasticLoadBalancer {
+		boolean _instanceAttached = false;
+		private String _instanceId;
+		private String _name;
+		
+		public DummyLoadBalancer(String name) {
+			_name = name;
+		}
+		
+		@Override
+		public void describe() {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public boolean attachInstance(String instanceId) {
+			System.err.println(_name + " attachInstance called");
+			_instanceId = instanceId;
+			_instanceAttached = true;
+			return true;
+		}
+
+		@Override
+		public boolean detachInstance() {
+			System.err.println(_name + " detachInstance called");
+			_instanceAttached = false;
+			return true;
+		}
+
+		@Override
+		public String getInstanceId() {
+			return _instanceId;
+		}
+
+		@Override
+		public boolean isInstanceHealthy() {
+			return _instanceAttached;
+		}
+
+		@Override
+		public String getName() {
+			return _name;
+		}
+		
+	}
 
 	@Test
 	public void configureFsmTest() {
@@ -44,7 +92,9 @@ public class AlfonsoTest {
 		Alfonso alfonso = new Alfonso();
 
 		FiniteState initialState =
-				alfonso.configureFsm(blueElb, "blueId", greenElb, "greenId", liveElb);
+				alfonso.configureFsm(new DummyLoadBalancer("BlueElb"), "blueId", 
+						new DummyLoadBalancer("GreenElb"), "greenId", 
+						new DummyLoadBalancer("LiveElb"));
 
 		Assert.assertEquals(initialState.getName(), "Start");
 
@@ -52,27 +102,29 @@ public class AlfonsoTest {
 
 		fsm.start();
 
-		postMessage(fsm, alfonso._blueIsUnhealthy, "Wait For BlueHealthy");
-		postMessage(fsm, alfonso._blueIsHealthy, "Wait For GreenHealthy");	  
-		postMessage(fsm, alfonso._greenIsHealthy, "Add Blue To Live");	  
-		postMessage(fsm, alfonso._liveHasOne, "Blue Live");	  
-		postMessage(fsm, alfonso._blueIsHealthy, "Blue Live");	  
-		postMessage(fsm, alfonso._greenIsHealthy, "Blue Live");	  
-		postMessage(fsm, alfonso._greenIsUnhealthy, "Green Failed");	  
-		postMessage(fsm, alfonso._greenIsHealthy, "Blue Live");	  
-		postMessage(fsm, alfonso._blueIsUnhealthy, "Blue Failed");	  
-		postMessage(fsm, alfonso._liveHasNone, "Add Green To Live");	  
-		postMessage(fsm, alfonso._liveHasOne, "Green Live");	  	  
-		postMessage(fsm, alfonso._blueIsUnhealthy, "Green Live");	  
-		postMessage(fsm, alfonso._greenIsUnhealthy, "Recovery");	  
-		postMessage(fsm, alfonso._greenIsHealthy, "Add Green To Live");	  
-		postMessage(fsm, alfonso._liveHasOne, "Green Live");	  	  
-		postMessage(fsm, alfonso._blueIsHealthy, "Remove Green From Live");	  
-		postMessage(fsm, alfonso._liveHasNone, "Add Blue To Live");	  
-		postMessage(fsm, alfonso._liveHasOne, "Blue Live");	  
-		postMessage(fsm, alfonso._greenIsUnhealthy, "Green Failed");
-		postMessage(fsm, alfonso._blueIsUnhealthy, "Recovery");
-		postMessage(fsm, alfonso._blueIsHealthy, "Add Blue To Live");
+		postMessage(fsm, Alfonso._blueIsUnhealthy, "Wait For BlueHealthy");
+		postMessage(fsm, Alfonso._blueIsHealthy, "Wait For GreenHealthy");	  
+		postMessage(fsm, Alfonso._greenIsHealthy, "Add Blue To Live");	  
+		postMessage(fsm, Alfonso._liveHasOne, "Blue Live");	  
+		postMessage(fsm, Alfonso._blueIsHealthy, "Blue Live");	  
+		postMessage(fsm, Alfonso._greenIsHealthy, "Blue Live");	  
+		postMessage(fsm, Alfonso._greenIsUnhealthy, "Green Failed");	  
+		postMessage(fsm, Alfonso._greenIsHealthy, "Blue Live");	  
+		postMessage(fsm, Alfonso._blueIsUnhealthy, "Blue Failed");	  
+		postMessage(fsm, Alfonso._liveHasNone, "Add Green To Live");	  
+		postMessage(fsm, Alfonso._liveHasOne, "Green Live");	  	  
+		postMessage(fsm, Alfonso._blueIsUnhealthy, "Green Live");	  
+		postMessage(fsm, Alfonso._greenIsUnhealthy, "Recovery");	  
+		postMessage(fsm, Alfonso._greenIsHealthy, "Add Green To Live");	  
+		postMessage(fsm, Alfonso._liveHasOne, "Green Live");	  	  
+		postMessage(fsm, Alfonso._blueIsHealthy, "Remove Green From Live");	  
+		postMessage(fsm, Alfonso._liveHasNone, "Add Blue To Live");	  
+		postMessage(fsm, Alfonso._liveHasOne, "Blue Live");	  
+		postMessage(fsm, Alfonso._greenIsUnhealthy, "Green Failed");
+		postMessage(fsm, Alfonso._blueIsUnhealthy, "Recovery");
+		postMessage(fsm, Alfonso._blueIsHealthy, "Add Blue To Live");
+		
+		fsm.end();
 
 	}
 
@@ -89,28 +141,22 @@ public class AlfonsoTest {
 		Assert.assertEquals(fsm.getState().getName(), stateName);
 	}
 
-	@Test(dependsOnMethods = {"configureFsmTest"})
+
+	@Test
 	public void runStateMachineTest() {
-		new Expectations() {{ 
-			blueElb.isInstanceHealthy(); result = true;		
-			greenElb.isInstanceHealthy(); result = true;	
-			blueElb.getName(); result = "BlueElb";	
-			greenElb.getName(); result = "GreenElb";	
-			liveElb.getName(); result = "LiveElb";
-		}};
 		
 		Logger l = Logger.getLogger("FiniteStateMachine");
 		l.setLevel(Level.FINEST);
-		l.addHandler(new ConsoleHandler());
+
 		for (Handler h : l.getHandlers()) {
 			h.setLevel(Level.FINEST);
 		}
 		
 		Alfonso alfonso = new Alfonso();
 		
-		alfonso._blueElb = blueElb;
-		alfonso._greenElb = greenElb;
-		alfonso._liveElb = liveElb;
+		alfonso._blueElb = new DummyLoadBalancer("BlueElb");
+		alfonso._greenElb = new DummyLoadBalancer("GreenElb");
+		alfonso._liveElb = new DummyLoadBalancer("LiveElb");
 		
 		Arguments arguments = new Arguments();
 		
@@ -126,7 +172,7 @@ public class AlfonsoTest {
 		alfonso.runStateMachine();
 		
 		try {
-			Thread.sleep(40000);
+			Thread.sleep(50000);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

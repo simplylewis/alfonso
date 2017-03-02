@@ -21,7 +21,9 @@ import java.util.List;
 
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancing.model.DescribeInstanceHealthRequest;
@@ -34,21 +36,24 @@ import com.amazonaws.services.elasticloadbalancing.model.LoadBalancerDescription
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerResult;
 
-public class ElasticLoadBalancer {
+public class ElasticLoadBalancer implements IElasticLoadBalancer {
 
 	private String _name;
 	private Instance _instance = null;
-	private AmazonElasticLoadBalancingClient _elbClient;
+//	private AmazonElasticLoadBalancingClient _elbClient;
+	private AmazonElasticLoadBalancing _elbClient;
 	
 	public ElasticLoadBalancer(String name) {
 		_name = name;
 		
-		_elbClient = new AmazonElasticLoadBalancingClient();
+		AmazonElasticLoadBalancingClientBuilder builder = AmazonElasticLoadBalancingClientBuilder.standard();
 		// TODO Should read this from properties file
-		_elbClient.setRegion(Region.getRegion(Regions.US_WEST_2));  
+		builder.setRegion(Regions.US_WEST_2.getName());
+		_elbClient = AmazonElasticLoadBalancingClientBuilder.defaultClient();  
 	}
 	
 	
+	@Override
 	public void describe() {
 		List<String> loadBalancers = new ArrayList<>();
 		loadBalancers.add(_name);
@@ -61,6 +66,7 @@ public class ElasticLoadBalancer {
 		}
 	}
 	
+	@Override
 	public boolean attachInstance(String instanceId) {
 		Instance instance = new Instance(instanceId);
 		
@@ -81,6 +87,7 @@ public class ElasticLoadBalancer {
 		return false;
 	}
 
+	@Override
 	public boolean detachInstance() {
 		List<Instance> instances = new ArrayList<>();
 		instances.add(_instance);
@@ -105,12 +112,14 @@ public class ElasticLoadBalancer {
 		return true;
 	}
 	
+	@Override
 	public String getInstanceId() {
 		Instance inst = _instance;
 		
 		return inst == null ? "" : inst.getInstanceId();
 	}
 	
+	@Override
 	public boolean isInstanceHealthy() {		
 		List<Instance> instances = new ArrayList<>();
 		instances.add(_instance);
@@ -133,6 +142,7 @@ public class ElasticLoadBalancer {
 		return false;
 	}
 	
+	@Override
 	public String getName() {
 		return _name;
 	}

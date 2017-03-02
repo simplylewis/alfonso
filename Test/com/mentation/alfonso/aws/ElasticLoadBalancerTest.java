@@ -40,7 +40,7 @@ public class ElasticLoadBalancerTest {
 	
 	static AmazonElasticLoadBalancingClient _elbClient = new AmazonElasticLoadBalancingClient();
 	private static String _testId = UUID.randomUUID().toString();
-	ElasticLoadBalancer _elb;
+	IElasticLoadBalancer _elb;
 	String _elbName;
 	List<String> _instances = new ArrayList<String>();
 	

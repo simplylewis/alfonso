@@ -17,6 +17,7 @@ limitations under the License.
 package com.mentation.alfonso;
 
 import com.mentation.alfonso.aws.ElasticLoadBalancer;
+import com.mentation.alfonso.aws.IElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteState;
 import com.mentation.fsm.state.FiniteStateMachine;
@@ -27,23 +28,16 @@ public class Alfonso {
 	protected ElbMonitor _greenElbMonitor;
 	protected ElbMonitor _liveElbMonitor;
 	
-	protected ElasticLoadBalancer _greenElb;
-	protected ElasticLoadBalancer _blueElb;
-	protected ElasticLoadBalancer _liveElb;
+	protected IElasticLoadBalancer _greenElb;
+	protected IElasticLoadBalancer _blueElb;
+	protected IElasticLoadBalancer _liveElb;
 	
-	static class BlueIsHealthy implements IMessage {};
-	static class BlueIsUnhealthy implements IMessage {};
-	static class GreenIsHealthy implements IMessage {};
-	static class GreenIsUnhealthy implements IMessage {};
-	static class LiveHasNone implements IMessage {};
-	static class LiveHasOne implements IMessage {};
-	
-	protected final BlueIsHealthy _blueIsHealthy = new BlueIsHealthy();
-	protected final BlueIsUnhealthy _blueIsUnhealthy = new BlueIsUnhealthy();
-	protected final GreenIsHealthy _greenIsHealthy = new GreenIsHealthy();
-	protected final GreenIsUnhealthy _greenIsUnhealthy = new GreenIsUnhealthy();
-	protected final LiveHasNone _liveHasNone = new LiveHasNone();
-	protected final LiveHasOne _liveHasOne = new LiveHasOne();
+	static final AlfonsoMessage _blueIsHealthy = new AlfonsoMessage("BlueIsHealthy");
+	static final AlfonsoMessage _blueIsUnhealthy = new AlfonsoMessage("BlueIsUnhealthy");
+	static final AlfonsoMessage _greenIsHealthy = new AlfonsoMessage("GreenIsHealthy");
+	static final AlfonsoMessage _greenIsUnhealthy = new AlfonsoMessage("GreenIsUnhealthy");
+	static final AlfonsoMessage _liveHasNone = new AlfonsoMessage("LiveHasNone");
+	static final AlfonsoMessage _liveHasOne = new AlfonsoMessage("LiveHasOne");
 	
 	public static void main(String[] args) {
 		Arguments arguments = new Arguments();
@@ -77,7 +71,7 @@ public class Alfonso {
 		_liveElb = new ElasticLoadBalancer(arguments.getLiveElbId());
 	}
 
-	private ElbMonitor configureElbMonitor(FiniteStateMachine fsm, ElasticLoadBalancer elb, IMessage passMessage, IMessage failMessage, IStateAnalyser stateAnalyser) {
+	private ElbMonitor configureElbMonitor(FiniteStateMachine fsm, IElasticLoadBalancer elb, IMessage passMessage, IMessage failMessage, IStateAnalyser stateAnalyser) {
 		ElbMonitoringDescriptor descriptor = new ElbMonitoringDescriptor();
 		
 		descriptor.setLoadBalancer(elb);
@@ -88,7 +82,7 @@ public class Alfonso {
 		return new ElbMonitor(fsm, descriptor, stateAnalyser);
 	}
 
-	protected FiniteState configureFsm(ElasticLoadBalancer blueElb, String blueId, ElasticLoadBalancer greenElb, String greenId, ElasticLoadBalancer liveElb) {		
+	protected FiniteState configureFsm(IElasticLoadBalancer blueElb, String blueId, IElasticLoadBalancer greenElb, String greenId, IElasticLoadBalancer liveElb) {		
 		
 		FiniteState start = new FiniteState(null, "Start");
 		FiniteState waitForBlueHealthy = new FiniteState(new AddInstanceToElb(blueElb, blueId), "Wait For BlueHealthy");
@@ -103,6 +97,8 @@ public class Alfonso {
 		FiniteState recovery = new FiniteState(new RemoveInstanceFromElb(liveElb), "Recovery");
 		
 		start.addTransition(_blueIsUnhealthy, waitForBlueHealthy);
+		start.addTransition(_blueIsHealthy, waitForGreenHealthy);
+		
 		waitForBlueHealthy.addTransition(_blueIsHealthy, waitForGreenHealthy);
 		
 		waitForGreenHealthy.addTransition(_greenIsHealthy, addBlueToLive);

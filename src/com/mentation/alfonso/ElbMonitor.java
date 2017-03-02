@@ -19,7 +19,7 @@ package com.mentation.alfonso;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.mentation.alfonso.aws.ElasticLoadBalancer;
+import com.mentation.alfonso.aws.IElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 import com.mentation.fsm.state.FiniteStateMachine;
 
@@ -57,14 +57,14 @@ public class ElbMonitor extends Thread {
 		return _descriptor.getLoadBalancer().getName();
 	}
 	
-	protected ElasticLoadBalancer getLoadBalancer() {
+	protected IElasticLoadBalancer getLoadBalancer() {
 		return _descriptor.getLoadBalancer();
 	}
 	
 	protected IMessage monitor() {
 		IMessage msg = _stateAnalyser.map(_descriptor);
 		
-		_logger.log(Level.FINE, new StringBuffer("Monitor returning ").append(msg).append(" from ").append(_descriptor.getLoadBalancer().getName()).toString());
+		_logger.log(Level.FINE, new StringBuilder("Monitor returning ").append(msg.name()).append(" from ").append(_descriptor.getLoadBalancer().getName()).toString());
 		
 		return msg;
 	}

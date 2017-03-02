@@ -16,15 +16,18 @@ limitations under the License.
 
 package com.mentation.alfonso;
 
-import com.mentation.alfonso.aws.ElasticLoadBalancer;
+import java.util.logging.Logger;
+
+import com.mentation.alfonso.aws.IElasticLoadBalancer;
 import com.mentation.fsm.action.IStateEntryAction;
 
 public class AddInstanceToElb implements IStateEntryAction {
 
 	private String _instanceId;
-	private ElasticLoadBalancer _elb;
+	private IElasticLoadBalancer _elb;
+	private Logger _logger = Logger.getLogger("FiniteStateMachine");
 
-	public AddInstanceToElb(ElasticLoadBalancer elb, String instanceId) {
+	public AddInstanceToElb(IElasticLoadBalancer elb, String instanceId) {
 		_elb = elb;
 		_instanceId = instanceId;
 
@@ -32,6 +35,7 @@ public class AddInstanceToElb implements IStateEntryAction {
 	
 	@Override
 	public void execute() {
+		_logger.info("Attach " + _instanceId + " to " + _elb.getName());
 		_elb.attachInstance(_instanceId);
 	}
 

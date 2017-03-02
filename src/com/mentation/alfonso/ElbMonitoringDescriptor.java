@@ -2,22 +2,22 @@ package com.mentation.alfonso;
 
 import java.util.Set;
 
-import com.mentation.alfonso.aws.ElasticLoadBalancer;
+import com.mentation.alfonso.aws.IElasticLoadBalancer;
 import com.mentation.fsm.message.IMessage;
 
 public class ElbMonitoringDescriptor {
-	ElasticLoadBalancer _loadBalancer;
+	IElasticLoadBalancer _loadBalancer;
 	int _pollingInterval;
 	IMessage _passMessage;
 	IMessage _failMessage;
 	
 	Set<String> _validInstances;
 
-	public ElasticLoadBalancer getLoadBalancer() {
+	public IElasticLoadBalancer getLoadBalancer() {
 		return _loadBalancer;
 	}
 
-	public void setLoadBalancer(ElasticLoadBalancer loadBalancer) {
+	public void setLoadBalancer(IElasticLoadBalancer loadBalancer) {
 		_loadBalancer = loadBalancer;
 	}
 
