@@ -16,14 +16,9 @@ limitations under the License.
 
 package com.mentation.alfonso;
 
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import mockit.Delegate;
-import mockit.Expectations;
-import mockit.Mocked;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
