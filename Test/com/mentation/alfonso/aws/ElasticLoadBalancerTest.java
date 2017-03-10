@@ -26,33 +26,36 @@ import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeSuite;
 import org.testng.annotations.Test;
 
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.PropertiesFileCredentialsProvider;
 import com.amazonaws.services.ec2.model.InstanceState;
 import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
+import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.CreateLoadBalancerResult;
 import com.amazonaws.services.elasticloadbalancing.model.DeleteLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.Listener;
 
 public class ElasticLoadBalancerTest {
-	
-	static AmazonElasticLoadBalancingClient _elbClient = new AmazonElasticLoadBalancingClient();
+	private static final String REGION_NAME = "us-west-2";
+	AmazonElasticLoadBalancing _elbClient;
 	private static String _testId = UUID.randomUUID().toString();
 	IElasticLoadBalancer _elb;
+	String _testName="ELB-"+System.currentTimeMillis();
 	String _elbName;
 	List<String> _instances = new ArrayList<String>();
 	
 	@BeforeSuite
 	public void beforeSuite() {
-		_elbClient.setRegion(Region.getRegion(Regions.US_WEST_2));
-		_elbName = UUID.randomUUID().toString().substring(0, 32);
+		PropertiesFileCredentialsProvider credentials = new PropertiesFileCredentialsProvider("D:\\Development\\aws\\credentials.properties");
+		_elbClient = AmazonElasticLoadBalancingClientBuilder.standard().withCredentials(credentials).withRegion(REGION_NAME).build();
+		_elbName = _testName+"-1";
 		
 		System.out.println(createLoadBalancer(_elbName));
 		_elb = new ElasticLoadBalancer(_elbName);	
 		
-		_instances.addAll(createEc2Instance());
+		_instances.addAll(createEc2Instance(credentials, REGION_NAME));
 		
 		AwsInstance awsInstance = new AwsInstance();
 		InstanceState current;
@@ -74,7 +77,13 @@ public class ElasticLoadBalancerTest {
 
 	@AfterSuite
 	public void afterSuite() {
-		terminateEc2Instance(_instances);
+		try {
+			terminateEc2Instance(_instances);
+		}
+		catch (Exception e) {
+			e.printStackTrace();
+		}
+		
 		deleteLoadBalancer(_elbName);
 	}
 	
@@ -104,7 +113,7 @@ public class ElasticLoadBalancerTest {
 		Assert.assertTrue(_elb.detachInstance());
 	}
 	
-	private static CreateLoadBalancerResult createLoadBalancer(String name) {
+	private CreateLoadBalancerResult createLoadBalancer(String name) {
 		System.out.println("create ELB " + name);
 
 		CreateLoadBalancerRequest createLoadBalancerRequest = new CreateLoadBalancerRequest(name);
@@ -114,12 +123,12 @@ public class ElasticLoadBalancerTest {
 		return _elbClient.createLoadBalancer(createLoadBalancerRequest);
 	}
 	
-	private static void deleteLoadBalancer(String name) {
+	private void deleteLoadBalancer(String name) {
 		System.out.println("delete ELB " + name);
 		_elbClient.deleteLoadBalancer(new DeleteLoadBalancerRequest(name));		
 	}
 	
-	private static Collection<String> createEc2Instance() {
+	private Collection<String> createEc2Instance(AWSCredentialsProvider credentials, String region) {
 		AwsInstance awsInstance = new AwsInstance();
 
 		Collection<String> securityGroupIds = new ArrayList<>();
@@ -144,7 +153,7 @@ public class ElasticLoadBalancerTest {
 		return instances;
 	}
 	
-	private static void terminateEc2Instance(List<String> instances) {
+	private void terminateEc2Instance(List<String> instances) {
 		AwsInstance awsInstance = new AwsInstance();
 		awsInstance.terminate(instances);
 	}

@@ -7,9 +7,14 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSCredentialsProviderChain;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.AvailabilityZone;
 import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
@@ -29,16 +34,16 @@ import com.amazonaws.services.ec2.model.TerminateInstancesResult;
 
 public class AwsInstance {
 	
-	private static AmazonEC2Client getClient() {
-		AmazonEC2Client ec2Client = new AmazonEC2Client();
-		// TODO Should read this from properties file
-		ec2Client.setRegion(Region.getRegion(Regions.US_WEST_2));
-		
-		return ec2Client;
+	private static AmazonEC2 getClient() {
+		return getClient(DefaultAWSCredentialsProviderChain.getInstance(), "us-west-2");
+	}
+
+	private static AmazonEC2 getClient(AWSCredentialsProvider credentials, String region) {
+		return AmazonEC2ClientBuilder.standard().withCredentials(credentials).withRegion(region).build();
 	}
 	
 	public static List<String> getAvailabilityZones() {
-		AmazonEC2Client ec2Client = getClient();
+		AmazonEC2 ec2Client = getClient();
 		
 		DescribeAvailabilityZonesResult dazr = ec2Client.describeAvailabilityZones();
 		
@@ -52,7 +57,11 @@ public class AwsInstance {
 	}
 	
 	public static List<String> getInstances(Collection<Tag> tags) {
-		AmazonEC2Client ec2Client = getClient();
+		return getInstances(DefaultAWSCredentialsProviderChain.getInstance(), "us-west-2", tags);
+	}
+	
+	public static List<String> getInstances(AWSCredentialsProvider credentials, String region, Collection<Tag> tags) {
+		AmazonEC2 ec2Client = getClient(credentials, region);
 		
 		DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest();
 		for (Tag tag : tags) {
@@ -73,7 +82,7 @@ public class AwsInstance {
 	}
 	
 	public Collection<String> launch(String ami, String instanceType, String availabilityZone, String keyName, Collection<String> securityGroups, Collection<Tag> tags) {
-		AmazonEC2Client ec2Client = getClient();
+		AmazonEC2 ec2Client = getClient();
 		
 		String clientToken = UUID.randomUUID().toString();
 		
@@ -112,7 +121,7 @@ public class AwsInstance {
 	}
 	
 	public boolean terminate(List<String> instanceIds) {
-		AmazonEC2Client ec2Client = getClient();
+		AmazonEC2 ec2Client = getClient();
 		
 		TerminateInstancesRequest terminateInstancesRequest = new TerminateInstancesRequest(instanceIds);
 		
@@ -129,7 +138,7 @@ public class AwsInstance {
 	}
 
 	public Map<String, InstanceState> getState(List<String> instances) {
-		AmazonEC2Client ec2Client = getClient();
+		AmazonEC2 ec2Client = getClient();
 		Map<String, InstanceState> results = new TreeMap<String, InstanceState>();
 		DescribeInstancesResult dir = ec2Client.describeInstances();
 		

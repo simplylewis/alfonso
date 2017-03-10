@@ -19,10 +19,9 @@ package com.mentation.alfonso.aws;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.amazonaws.regions.Region;
-import com.amazonaws.regions.Regions;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancing;
-import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClient;
 import com.amazonaws.services.elasticloadbalancing.AmazonElasticLoadBalancingClientBuilder;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.DeregisterInstancesFromLoadBalancerResult;
@@ -40,18 +39,20 @@ public class ElasticLoadBalancer implements IElasticLoadBalancer {
 
 	private String _name;
 	private Instance _instance = null;
-//	private AmazonElasticLoadBalancingClient _elbClient;
 	private AmazonElasticLoadBalancing _elbClient;
 	
 	public ElasticLoadBalancer(String name) {
-		_name = name;
-		
-		AmazonElasticLoadBalancingClientBuilder builder = AmazonElasticLoadBalancingClientBuilder.standard();
-		// TODO Should read this from properties file
-		builder.setRegion(Regions.US_WEST_2.getName());
-		_elbClient = AmazonElasticLoadBalancingClientBuilder.defaultClient();  
+		construct(DefaultAWSCredentialsProviderChain.getInstance(), "us-west-2", name);  
 	}
 	
+	public ElasticLoadBalancer(AWSCredentialsProvider credentials, String region, String name) {
+		construct(credentials, region, name);
+	}
+	
+	private void construct(AWSCredentialsProvider credentials, String region, String name) {
+		_name = name;
+		_elbClient = AmazonElasticLoadBalancingClientBuilder.standard().withCredentials(credentials).withRegion(region).build();
+	}
 	
 	@Override
 	public void describe() {
